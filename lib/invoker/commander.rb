@@ -30,20 +30,32 @@ module Invoker
 
     # Start the invoker process supervisor. This method starts a unix server
     # in separate thread that listens for incoming commands.
-    def start_manager
-      verify_process_configuration
+    def start_manager(options = {})
+      validate_process_configuration
       daemonize_app if Invoker.daemonize?
       install_interrupt_handler
       unix_server_thread = Thread.new { Invoker::IPC::Server.new }
       @thread_group.add(unix_server_thread)
       process_manager.run_power_server
-      Invoker.config.autorunnable_processes.each do |process_info|
-        process_manager.start_process(process_info)
-        Logger.puts("Starting process - #{process_info.label} waiting for #{process_info.sleep_duration} seconds...")
-        sleep(process_info.sleep_duration)
-      end
+      start_processes(options)
       at_exit { process_manager.kill_workers }
       start_event_loop
+    end
+
+    def start_processes(options = {})
+      skippable_processes = Array(options[:skip])
+
+      Invoker.config.autorunnable_processes.each do |process_config|
+        process_label = process_config.label
+
+        next if skippable_processes.include?(process_label)
+
+        sleep_duration = process_config.sleep_duration
+
+        process_manager.start_process(process_config)
+        Logger.puts("Starting process - #{process_label} waiting for #{sleep_duration} seconds...")
+        sleep(sleep_duration)
+      end
     end
 
     def on_next_tick(*args, &block)
@@ -61,7 +73,7 @@ module Invoker
 
     private
 
-    def verify_process_configuration
+    def validate_process_configuration
       if !Invoker.config.processes || Invoker.config.processes.empty?
         raise Invoker::Errors::InvalidConfig.new("No processes configured in config file")
       end

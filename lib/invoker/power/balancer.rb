@@ -1,5 +1,6 @@
 require 'em-proxy'
-require 'http-parser'
+require "pry"
+# require 'http-parser'
 require "invoker/power/http_parser"
 require "invoker/power/url_rewriter"
 

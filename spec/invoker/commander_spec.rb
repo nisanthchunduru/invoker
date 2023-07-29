@@ -10,17 +10,23 @@ describe "Invoker::Commander" do
     Invoker.config = @original_invoker_config
   end
 
-  describe "With no processes configured" do
-    before(:each) do
-      @commander = Invoker::Commander.new
+  describe ".start_manager" do
+    context "config file doesn't have any processes" do
+      before(:each) do
+        Invoker.config.stubs(:processes).returns([])
+      end
+
+      it "raises an Invoker::Errors::InvalidConfig exception" do
+        expect {
+          Invoker.commander.start_manager
+        }.to raise_error(Invoker::Errors::InvalidConfig)
+      end
     end
 
-    it "should throw error" do
-      Invoker.config.stubs(:processes).returns([])
-
-      expect {
-        @commander.start_manager
-      }.to raise_error(Invoker::Errors::InvalidConfig)
+    context "'skip' option gvien" do
+      it "skips starting the given processes" do
+        Invoker.commander.start_processes(skip: ["rails"])
+      end
     end
   end
 
@@ -98,7 +104,7 @@ describe "Invoker::Commander" do
     end
   end
 
-  describe 'disable_autorun option' do
+  describe "Disable autorun feature" do
     context 'autorun is disabled for a process' do
       before do
         @processes = [

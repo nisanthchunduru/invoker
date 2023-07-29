@@ -33,10 +33,9 @@ module Invoker
     end
 
     desc "start [CONFIG_FILE]", "Start Invoker Server"
-    option :port, type: :numeric, banner: "Port series to be used for starting rack servers"
     option :daemon,
       type: :boolean,
-      banner: "Daemonize the server into the background",
+      banner: "Daemonize invoker",
       aliases: [:d]
     option :nocolors,
       type: :boolean,
@@ -48,6 +47,10 @@ module Invoker
     option :private_key,
       type: :string,
       banner: "Path to private key"
+    option :except,
+      type: :array,
+      banner: "Skip starting the given process/processes"
+    option :port, type: :numeric, banner: "Port series to use for starting rack servers"
     def start(file = nil)
       Invoker.setup_config_location
       port = options[:port] || 9000
@@ -55,11 +58,11 @@ module Invoker
       Invoker.nocolors = options[:nocolors]
       Invoker.certificate = options[:certificate]
       Invoker.private_key = options[:private_key]
-      Invoker.load_invoker_config(file, port)
+      Invoker.load_config(file, port)
       warn_about_notification
       pinger = Invoker::CLI::Pinger.new(unix_socket)
       abort("Invoker is already running".colorize(:red)) if pinger.invoker_running?
-      Invoker.commander.start_manager
+      Invoker.start
     end
 
     desc "add process", "Add a program to Invoker server"

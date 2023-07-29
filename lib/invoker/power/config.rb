@@ -6,39 +6,41 @@ module Invoker
     class ConfigExists < StandardError; end
 
     class Config
-      def self.has_config?
-        File.exist?(config_file)
-      end
-
-      def self.create(options = {})
-        if has_config?
-          raise ConfigExists, "Config file already exists at location #{config_file}"
+      class << self
+        def has_config?
+          File.exist?(config_file)
         end
-        config = new(options)
-        config.save
-      end
 
-      def self.delete
-        if File.exist?(config_file)
-          File.delete(config_file)
+        def create(options = {})
+          if has_config?
+            raise ConfigExists, "Config file already exists at location #{config_file}"
+          end
+          config = new(options)
+          config.save
         end
-      end
 
-      def self.config_file
-        File.join(Invoker.home, ".invoker", "config")
-      end
+        def delete
+          if File.exist?(config_file)
+            File.delete(config_file)
+          end
+        end
 
-      def self.config_dir
-        File.join(Invoker.home, ".invoker")
+        def load_config
+          config_hash = File.open(config_file, "r") { |fl| YAML.load(fl) }
+          new(config_hash)
+        end
+
+        def config_file
+          File.join(Invoker.home, ".invoker", "config")
+        end
+
+        def config_dir
+          File.join(Invoker.home, ".invoker")
+        end
       end
 
       def initialize(options = {})
         @config = options
-      end
-
-      def self.load_config
-        config_hash = File.open(config_file, "r") { |fl| YAML.load(fl) }
-        new(config_hash)
       end
 
       def dns_port=(dns_port)

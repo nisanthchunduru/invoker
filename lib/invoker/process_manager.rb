@@ -34,6 +34,10 @@ module Invoker
         return false
       end
 
+      start_process_by_name_for_first_time(process_name)
+    end
+
+    def start_process_by_name_for_first_time(process_name)
       process_info = Invoker.config.process(process_name)
       start_process(process_info) if process_info
     end

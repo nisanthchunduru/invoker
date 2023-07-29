@@ -33,7 +33,7 @@ require "invoker/process_printer"
 
 module Invoker
   class << self
-    attr_accessor :config, :tail_watchers, :commander
+    attr_accessor :config
     attr_accessor :dns_cache, :daemonize, :nocolors, :certificate, :private_key
 
     alias_method :daemonize?, :daemonize
@@ -51,11 +51,21 @@ module Invoker
       RUBY_PLATFORM
     end
 
-    def load_invoker_config(file, port)
+    def start(*args)
+      commander.start_manager(*args)
+    end
+
+    def commander
+      @commander ||= Invoker::Commander.new
+    end
+
+    def tail_watchers
+      @tail_watchers ||= Invoker::CLI::TailWatcher.new
+    end
+
+    def load_config(file, port)
       @config = Invoker::Parsers::Config.new(file, port)
       @dns_cache = Invoker::DNSCache.new(@invoker_config)
-      @tail_watchers = Invoker::CLI::TailWatcher.new
-      @commander = Invoker::Commander.new
     end
 
     def close_socket(socket)
